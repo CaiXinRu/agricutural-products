@@ -1,0 +1,22 @@
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+img {
+  max-width: 100%;
+  height: auto;
+}
+.inline-flex {
+  display: inline-flex;
+}
+body {
+  background: url(https://hexschool.github.io/js-filter/assets/bg.jpg);
+  background-size: cover;
+  height: 100vh;
+  font-family: 'NotoSansCJKtc-Bold';
+  color: #2a2a2a;
+  letter-spacing: 1px;
+  white-space: nowrap;
+}

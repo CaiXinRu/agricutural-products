@@ -4,31 +4,16 @@
     <div class="main rounded">
       <div class="button-group d-flex justify-content-center">
         <button
-          data-type="N04"
+          v-for="button in buttons"
+          :key="button.code"
+          :data-type="button.code"
           type="button"
-          :class="['vegetablesBtn', 'btn', 'btn-type', 'border-dark', 'border-2', {'active': toggleN04}]"
-          @click="changeCropType('N04')"
+          :class="['btn-type', 'btn', 'border-dark', 'border-2', {'active': button.isActive}]"
+          @click="changeCropType(button.code)"
         >
-          蔬果
-        </button>
-        <button
-          data-type="N05"
-          type="button"
-          :class="['fruitsBtn', 'btn', 'btn-type', 'border-dark', 'border-2', {'active': toggleN05}]"
-          @click="changeCropType('N05')"
-        >
-          水果
-        </button>
-        <button
-          data-type="N06"
-          type="button"
-          :class="['flowersBtn', 'btn', 'btn-type', 'border-dark', 'border-2', {'active': toggleN06}]"
-          @click="changeCropType('N06')"
-        >
-          花卉
+          {{ button.label }}
         </button>
       </div>
-
       <div class="search-group d-flex flex-column flex-md-row">
         <div class="crop-input d-flex mb-2">
           <label class="rounded-start text-white" for="crop">作物名稱</label>
@@ -52,12 +37,12 @@
       <div
         class="sort-content d-flex justify-content-md-between justify-content-center"
       >
-        <p id="js-crop-name" class="show-result fw-bold"></p>
-
+        <p id="js-crop-name" class="show-result fw-bold"><span v-if="searchText">查看「{{searchText}}」的比價結果</span></p>
         <select
           v-model="sortType"
           class="sort-select border-secondary d-none d-md-block rounded p-2 pe-4"
-          @change="sortData(sortType)"
+          @change="sortDown(sortType)"
+          :disabled="filteredList.length === 0"
         >
           <option>排序篩選</option>
           <option value="上價">依上價排序</option>
@@ -78,12 +63,12 @@
                 <span>
                   <font-awesome-icon
                   @click="sortUp('上價')"
-                  class=" fa-caret-up"
+                  :class="{'fa-caret-up':true, 'display-none': filteredList.length === 0}"
                   icon="fa-solid fa-caret-up" />
                   <font-awesome-icon
                   data-price="上價"
                   @click="sortDown('上價')"
-                  class="fa-caret-down"
+                  :class="{'fa-caret-down': true, 'display-none': filteredList.length === 0}"
                   icon="fa-solid fa-caret-down" />
                 </span>
               </div>
@@ -95,12 +80,12 @@
                   <font-awesome-icon
                   data-price="中價"
                   @click="sortUp('中價')"
-                  class="fa-caret-up"
+                  :class="{'fa-caret-up':true, 'display-none': filteredList.length === 0}"
                   icon="fa-solid fa-caret-up" />
                   <font-awesome-icon
                   data-price="中價"
                   @click="sortDown('中價')"
-                  class="fa-caret-down"
+                  :class="{'fa-caret-down': true, 'display-none': filteredList.length === 0}"
                   icon="fa-solid fa-caret-down" />
                 </span>
               </div>
@@ -112,12 +97,12 @@
                   <font-awesome-icon
                   data-price="下價"
                   @click="sortUp('下價')"
-                  class="fa-caret-up"
+                  :class="{'fa-caret-up':true, 'display-none': filteredList.length === 0}"
                   icon="fa-solid fa-caret-up" />
                   <font-awesome-icon
                   data-price="下價"
                   @click="sortDown('下價')"
-                  class="fa-caret-down"
+                  :class="{'fa-caret-down': true, 'display-none': filteredList.length === 0}"
                   icon="fa-solid fa-caret-down" />
                 </span>
               </div>
@@ -129,12 +114,12 @@
                   <font-awesome-icon
                   data-price="平均價"
                   @click="sortUp('平均價')"
-                  class="fa-caret-up"
+                  :class="{'fa-caret-up':true, 'display-none': filteredList.length === 0}"
                   icon="fa-solid fa-caret-up" />
                   <font-awesome-icon
                   data-price="平均價"
                   @click="sortDown('平均價')"
-                  class="fa-caret-down"
+                  :class="{'fa-caret-down': true, 'display-none': filteredList.length === 0}"
                   icon="fa-solid fa-caret-down" />
                 </span>
               </div>
@@ -146,12 +131,12 @@
                   <font-awesome-icon
                   data-price="交易量"
                   @click="sortUp('交易量')"
-                  class="fa-caret-up"
+                  :class="{'fa-caret-up':true, 'display-none': filteredList.length === 0}"
                   icon="fa-solid fa-caret-up" />
                   <font-awesome-icon
                   data-price="交易量"
                   @click="sortDown('交易量')"
-                  class="fa-caret-down"
+                  :class="{'fa-caret-down': true, 'display-none': filteredList.length === 0}"
                   icon="fa-solid fa-caret-down" />
                 </span>
               </div>
@@ -159,7 +144,12 @@
           </tr>
         </thead>
         <tbody class="showList">
-          <tr v-if="filteredList.length === 0">
+          <tr v-if="cropType==='' && searchText==''">
+            <td colspan="7" class="text-center p-3">
+              請輸入並搜尋想比價的作物名稱^＿^
+            </td>
+          </tr>
+          <tr v-else-if="filteredList.length === 0">
             <td colspan="7" class="text-center p-3">
               查詢不到交易資訊QQ
             </td>
@@ -186,11 +176,18 @@ export default {
     return {
       data: [],
       cropType: '',
+      buttons: [
+        { code: 'N04', label: '蔬果', isActive: false },
+        { code: 'N05', label: '水果', isActive: false },
+        { code: 'N06', label: '花卉', isActive: false }
+      ],
       toggleN04: false,
       toggleN05: false,
       toggleN06: false,
       searchText: '',
-      sortType: '排序篩選'
+      sortType: '排序篩選',
+      dataShown: [], // 透過pagination()分頁後的資料
+      currentPage: 1 // 當前瀏覽第幾頁，預設第一頁
     }
   },
   computed: {
@@ -199,7 +196,7 @@ export default {
       let filteredData = []
       if (this.cropType === '') {
         if (this.searchText.trim() === '') {
-          return this.data
+          return filteredData
         } else {
           // eslint-disable-next-line no-unused-vars
           filteredData = this.data.filter(item => item.作物名稱?.match(this.searchText.trim()))
@@ -229,29 +226,34 @@ export default {
     }
   },
   methods: {
+    pigination (nowPage) {
+      const dataTotal = this.filteredList.length
+      const perPage = 20
+      const pageTotal = Math.ceil(dataTotal / perPage)
+      this.currentPage = nowPage
+      if (this.currentPage > pageTotal) {
+        this.currentPage = pageTotal
+      }
+      const minData = (this.currentPage - 1) * perPage
+      const maxData = (this.currentPage * perPage)
+      this.dataShown = this.filteredList.slice(minData, maxData)
+    },
     changeCropType (type) {
       this.cropType = type
-      this.toggleN04 = false
-      this.toggleN05 = false
-      this.toggleN06 = false
+      // eslint-disable-next-line no-return-assign
+      this.buttons.forEach(item => item.isActive = false)
       if (type === 'N04') {
-        this.toggleN04 = true
+        this.buttons[0].isActive = true
       } else if (type === 'N05') {
-        this.toggleN05 = true
+        this.buttons[1].isActive = true
       } else if (type === 'N06') {
-        this.toggleN06 = true
+        this.buttons[2].isActive = true
       }
     },
     searchCrop () {
       if (this.searchText.trim() === '') {
         alert('請輸入作物名稱！')
       }
-    },
-    sortData (sortType) {
-      this.changeSort(sortType)
-    },
-    changeSort (sortType) {
-      this.data.sort((a, b) => a[sortType] - b[sortType])
     },
     sortUp (value) {
       this.data.sort((a, b) => b[value] - a[value])
@@ -277,28 +279,6 @@ export default {
 </script>
 
 <style scoped>
-*,
-*::before,
-*::after {
-  box-sizing: border-box;
-}
-
-img {
-  max-width: 100%;
-  height: auto;
-}
-.inline-flex {
-  display: inline-flex;
-}
-body {
-  background: url(https://hexschool.github.io/js-filter/assets/bg.jpg);
-  background-size: cover;
-  height: 100vh;
-  font-family: 'NotoSansCJKtc-Bold';
-  color: #2a2a2a;
-  letter-spacing: 1px;
-  white-space: nowrap;
-}
 .wrap {
   max-width: 1140px;
   margin: 0 auto;
@@ -454,5 +434,8 @@ body {
 .fa-caret-down {
   top: 9px;
   right: -15px;
+}
+.display-none{
+  display: none
 }
 </style>
