@@ -12,17 +12,18 @@
         </p>
         <SelectGroup
           @sortDown="sortDown"
-          :filteredList="filteredList"
+          :filteredList="dataShown"
           v-model="sortType"
         />
       </div>
       <TableGroup
         @sortDown="sortDown"
         @sortUp="sortUp"
-        :filteredList="filteredList"
+        :filteredList="dataShown"
         :cropType="cropType"
         :searchText="searchText"
       />
+      <PaginatePage :page-total="pageTotal" :current-page="currentPage" @emit-switch="pagination" :dataShown="dataShown"/>
     </div>
   </div>
 </template>
@@ -33,6 +34,7 @@ import ButtonGroup from '@/components/ButtonGroup.vue'
 import SearchGroup from '@/components/SearchGroup.vue'
 import SelectGroup from '@/components/SelectGroup.vue'
 import TableGroup from '@/components/TableGroup.vue'
+import PaginatePage from '@/components/PaginatePage.vue'
 export default {
   data () {
     return {
@@ -41,14 +43,17 @@ export default {
       searchText: '',
       sortType: '排序篩選',
       dataShown: [], // 透過pagination()分頁後的資料
-      currentPage: 1 // 當前瀏覽第幾頁，預設第一頁
+      currentPage: 1, // 當前瀏覽第幾頁，預設第一頁
+      pageTotal: 0, // 原始資料總共分為幾頁，先預設有0頁
+      perPage: 20
     }
   },
   components: {
     ButtonGroup,
     SearchGroup,
     SelectGroup,
-    TableGroup
+    TableGroup,
+    PaginatePage
   },
   computed: {
     // eslint-disable-next-line vue/return-in-computed-property
@@ -94,20 +99,9 @@ export default {
     }
   },
   methods: {
-    pigination (nowPage) {
-      const dataTotal = this.filteredList.length
-      const perPage = 20
-      const pageTotal = Math.ceil(dataTotal / perPage)
-      this.currentPage = nowPage
-      if (this.currentPage > pageTotal) {
-        this.currentPage = pageTotal
-      }
-      const minData = (this.currentPage - 1) * perPage
-      const maxData = this.currentPage * perPage
-      this.dataShown = this.filteredList.slice(minData, maxData)
-    },
     changeCropType (type) {
       this.cropType = type
+      this.pagination(1)
     },
     searchCrop () {
       if (this.searchText.trim() === '') {
@@ -117,10 +111,10 @@ export default {
       }
     },
     sortUp (value) {
-      this.data.sort((a, b) => b[value] - a[value])
+      this.dataShown.sort((a, b) => b[value] - a[value])
     },
     sortDown (value) {
-      this.data.sort((a, b) => a[value] - b[value])
+      this.dataShown.sort((a, b) => a[value] - b[value])
     },
     fetchData () {
       axios
@@ -131,6 +125,18 @@ export default {
         .catch((err) => {
           console.error(err)
         })
+    },
+    pagination (nowPage) {
+      const dataTotal = this.filteredList.length
+      // const perPage = 20
+      this.pageTotal = Math.ceil(dataTotal / this.perPage)
+      this.currentPage = nowPage
+      if (this.currentPage > this.pageTotal) {
+        this.currentPage = this.pageTotal
+      }
+      const minData = (this.currentPage - 1) * this.perPage
+      const maxData = (this.currentPage * this.perPage)
+      this.dataShown = this.filteredList.slice(minData, maxData)
     }
   },
   created () {
