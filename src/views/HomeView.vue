@@ -12,7 +12,7 @@
         </p>
         <SelectGroup
           @sortDown="sortDown"
-          :filteredList="dataShown"
+          :filteredList="filteredList"
           v-model="sortType"
         />
       </div>
@@ -23,7 +23,10 @@
         :cropType="cropType"
         :searchText="searchText"
       />
-      <PaginatePage :page-total="pageTotal" :current-page="currentPage" @emit-switch="pagination" :dataShown="dataShown"/>
+      <!-- <PaginatePage :page-total="pageTotal" :current-page="currentPage" @emit-switch="pagination" :dataShown="dataShown"/> -->
+      <div class="pagination" v-if="filteredList.length">
+        <el-pagination background layout="prev, pager, next" :total="filteredList.length" :page-size="perPage" v-model:current-page="currentPage"/>
+      </div>
     </div>
   </div>
 </template>
@@ -34,7 +37,9 @@ import ButtonGroup from '@/components/ButtonGroup.vue'
 import SearchGroup from '@/components/SearchGroup.vue'
 import SelectGroup from '@/components/SelectGroup.vue'
 import TableGroup from '@/components/TableGroup.vue'
-import PaginatePage from '@/components/PaginatePage.vue'
+import { ElPagination } from 'element-plus'
+// import PaginatePage from '@/components/PaginatePage.vue'
+
 export default {
   data () {
     return {
@@ -53,7 +58,8 @@ export default {
     SearchGroup,
     SelectGroup,
     TableGroup,
-    PaginatePage
+    ElPagination
+    // PaginatePage
   },
   computed: {
     // eslint-disable-next-line vue/return-in-computed-property
@@ -63,7 +69,6 @@ export default {
         if (this.searchText.trim() === '') {
           return filteredData
         } else {
-          // eslint-disable-next-line no-unused-vars
           filteredData = this.data.filter((item) =>
             item.作物名稱?.match(this.searchText.trim())
           )
@@ -71,8 +76,7 @@ export default {
             return this.data.filter((item) =>
               item.作物名稱?.match(this.searchText.trim())
             )
-            // eslint-disable-next-line eqeqeq
-          } else if (filteredData.length == 0) {
+          } else if (filteredData.length === 0) {
             return filteredData
           }
         }
@@ -80,7 +84,6 @@ export default {
         if (this.searchText.trim() === '') {
           return this.data.filter((item) => item.種類代碼 === this.cropType)
         } else {
-          // eslint-disable-next-line no-unused-vars
           filteredData = this.data.filter((item) =>
             item.作物名稱?.match(this.searchText.trim())
           )
@@ -90,8 +93,7 @@ export default {
                 item.種類代碼 === this.cropType &&
                 item.作物名稱?.match(this.searchText.trim())
             )
-            // eslint-disable-next-line eqeqeq
-          } else if (filteredData.length == 0) {
+          } else if (filteredData.length === 0) {
             return filteredData
           }
         }
@@ -109,12 +111,18 @@ export default {
       } else {
         this.searchText = ''
       }
+      this.pagination(1)
+      console.log('searchCrop')
     },
     sortUp (value) {
-      this.dataShown.sort((a, b) => b[value] - a[value])
+      this.filteredList.sort((a, b) => b[value] - a[value])
+      this.pagination(1)
     },
     sortDown (value) {
-      this.dataShown.sort((a, b) => a[value] - b[value])
+      this.filteredList.sort((a, b) => a[value] - b[value])
+      this.pagination(1)
+      console.log(this.dataShown)
+      console.log(this.filteredList)
     },
     fetchData () {
       axios
@@ -128,7 +136,6 @@ export default {
     },
     pagination (nowPage) {
       const dataTotal = this.filteredList.length
-      // const perPage = 20
       this.pageTotal = Math.ceil(dataTotal / this.perPage)
       this.currentPage = nowPage
       if (this.currentPage > this.pageTotal) {
@@ -137,6 +144,14 @@ export default {
       const minData = (this.currentPage - 1) * this.perPage
       const maxData = (this.currentPage * this.perPage)
       this.dataShown = this.filteredList.slice(minData, maxData)
+    }
+  },
+  watch: {
+    filteredList () {
+      this.pagination(1)
+    },
+    currentPage () {
+      this.pagination(this.currentPage)
     }
   },
   created () {
@@ -188,5 +203,13 @@ export default {
 }
 .sort-content {
   margin-bottom: 1.25rem;
+}
+.pagination{
+  display: flex;
+  justify-content: center;
+  --el-color-primary: #f8d45b;
+  --el-fill-color: #889d39;
+  --el-text-color-primary: #ffffff;
+  --el-disabled-bg-color: #f3f1ea;
 }
 </style>

@@ -77,7 +77,6 @@ export default {
 .search, .search:hover {
   width: 16.39%;
   background: #899e39;
-  padding: 0.5rem 3.375rem;
   margin-left: 0.5rem
 }
 @media (max-width: 767px) {
@@ -89,9 +88,8 @@ export default {
   .crop-input {
     width: 100%;
   }
-  .search {
+  .search, .search:hover {
     width: 100%;
-    padding: 0;
     margin-left: 0
   }
 }
